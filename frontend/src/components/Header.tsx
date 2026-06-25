@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
                   </>
                 ) : (
                   <Link to="/admin" className="btn btn-secondary" style={{ padding: '8px 16px', backgroundColor: 'var(--surface-container)', borderColor: 'var(--border)', borderRadius: 'var(--radius-full)' }}>
-                    <ShieldAlert size={16} /> {user.role === 'admin' ? 'Admin Portal' : 'Employee Portal'}
+                    <ShieldAlert size={16} /> {user.role === 'admin' ? t('admin_portal', 'Admin Portal') : t('employee_portal', 'Employee Portal')}
                   </Link>
                 )}
                 <button onClick={handleLogoutClick} className="btn btn-icon btn-secondary" title={t('logout', 'Logout')} style={{ padding: '8px', border: 'none' }}>
@@ -183,7 +183,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
                 </>
               ) : (
                 <Link to="/admin" onClick={() => setIsOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
-                  <ShieldAlert size={18} /> {user.role === 'admin' ? 'Admin Portal' : 'Employee Portal'}
+                  <ShieldAlert size={18} /> {user.role === 'admin' ? t('admin_portal', 'Admin Portal') : t('employee_portal', 'Employee Portal')}
                 </Link>
               )}
               <button
