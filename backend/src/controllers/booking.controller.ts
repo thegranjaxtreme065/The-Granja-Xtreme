@@ -442,7 +442,7 @@ export const uploadCustomerSignature = async (req: AuthenticatedRequest, res: Re
     const atvObj = booking.atvId as any;
 
     const emailSubject = `Adventure Secured! Booking Confirmed - The Granja Xtreme`;
-    const emailText = `Hi ${userObj.firstName},\n\nYour ATV rental booking for the ${atvObj.name} (${atvObj.model}) has been successfully confirmed!\n\nBooking Details:\n- Booking ID: ${booking._id}\n- Start Date: ${new Date(booking.startDate).toDateString()}\n- End Date: ${new Date(booking.endDate).toDateString()}\n\nYou can access your contract in your dashboard: http://localhost:5173/dashboard\n\nSee you on the trails!\n\nBest regards,\nThe Granja Xtreme Team`;
+    const emailText = `Hi ${userObj.firstName},\n\nYour ATV rental booking for the ${atvObj.name} (${atvObj.model}) has been successfully confirmed!\n\nBooking Details:\n- Booking ID: ${booking._id}\n- Start Date: ${new Date(booking.startDate).toDateString()}\n- End Date: ${new Date(booking.endDate).toDateString()}\n\nYou can access your contract in your dashboard: https://thegranjaxtreme.com/dashboard\n\nSee you on the trails!\n\nBest regards,\nThe Granja Xtreme Team`;
     
     await sendEmail(userObj.email, emailSubject, emailText);
 
