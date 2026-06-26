@@ -9,7 +9,7 @@ interface Booking {
   startDate: string;
   endDate: string;
   status: string;
-  pricing: { total: number };
+  finalTotal?: number;
   atvId: { _id: string; name: string; model: string; images: string[] };
 }
 
@@ -167,7 +167,7 @@ export const CustomerDetails: React.FC = () => {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#166534' }}>${booking.pricing.total.toFixed(2)}</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#166534' }}>${(booking.finalTotal || 0).toFixed(2)}</div>
                         <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>{booking.status}</div>
                       </div>
                       <button style={{ padding: '8px 16px', backgroundColor: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
