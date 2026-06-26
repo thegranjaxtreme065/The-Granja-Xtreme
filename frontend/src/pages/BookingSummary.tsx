@@ -229,6 +229,7 @@ export const BookingSummary: React.FC<{ user?: any }> = ({ user }) => {
                   }}
                   onFocus={() => setShowCountryDropdown(true)}
                   required 
+                  autoComplete="new-password" // Prevents browser autofill from overlapping
                   style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', color: '#6b7280', outline: 'none' }} 
                 />
                 {showCountryDropdown && (
@@ -246,11 +247,11 @@ export const BookingSummary: React.FC<{ user?: any }> = ({ user }) => {
                     zIndex: 50,
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}>
-                    {COUNTRIES.filter(c => c.toLowerCase().includes(country.toLowerCase())).map(c => (
+                    {COUNTRIES.filter(c => t(c).toLowerCase().includes(country.toLowerCase())).map(c => (
                       <div 
                         key={c}
                         onClick={() => {
-                          setCountry(c);
+                          setCountry(t(c));
                           setShowCountryDropdown(false);
                         }}
                         style={{
@@ -263,11 +264,11 @@ export const BookingSummary: React.FC<{ user?: any }> = ({ user }) => {
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                       >
-                        {c}
+                        {t(c)}
                       </div>
                     ))}
-                    {COUNTRIES.filter(c => c.toLowerCase().includes(country.toLowerCase())).length === 0 && (
-                      <div style={{ padding: '10px 16px', fontSize: '14px', color: '#9ca3af' }}>No matches found</div>
+                    {COUNTRIES.filter(c => t(c).toLowerCase().includes(country.toLowerCase())).length === 0 && (
+                      <div style={{ padding: '10px 16px', fontSize: '14px', color: '#9ca3af' }}>{t("No matches found")}</div>
                     )}
                   </div>
                 )}
