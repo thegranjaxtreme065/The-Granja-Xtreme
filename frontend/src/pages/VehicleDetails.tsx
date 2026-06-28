@@ -588,13 +588,13 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ user }) => {
                     </label>
                     <div style={{ position: 'relative' }}>
                       <DatePicker 
-                        selected={startDate ? new Date(startDate) : null}
+                        selected={startDate ? new Date(`${startDate}T12:00:00`) : null}
                         onChange={(date: Date | null) => {
                           if (date) {
-                            // Adjust date to local timezone correctly before saving to state
-                            const d = new Date(date);
-                            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-                            const val = d.toISOString().split('T')[0];
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const val = `${year}-${month}-${day}`;
                             setStartDate(val);
                             if (!endDate || val > endDate) {
                               setEndDate(val);
@@ -607,7 +607,7 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ user }) => {
                         minDate={new Date()}
                         excludeDates={disabledDates}
                         placeholderText={t("Select Check-In")}
-                        dateFormat="yyyy-MM-dd"
+                        dateFormat={i18n.language?.startsWith('es') ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
                         className="focus:border-primary"
                         wrapperClassName="date-picker-wrapper"
                         withPortal={window.innerWidth < 768}
@@ -637,13 +637,13 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ user }) => {
                     </label>
                     <div style={{ position: 'relative' }}>
                       <DatePicker 
-                        selected={endDate ? new Date(endDate) : null}
+                        selected={endDate ? new Date(`${endDate}T12:00:00`) : null}
                         onChange={(date: Date | null) => {
                           if (date) {
-                            // Adjust date to local timezone correctly before saving to state
-                            const d = new Date(date);
-                            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-                            const val = d.toISOString().split('T')[0];
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const val = `${year}-${month}-${day}`;
                             setEndDate(val);
                             setBookingError('');
                           } else {
@@ -653,7 +653,7 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ user }) => {
                         minDate={startDate ? new Date(`${startDate}T12:00:00`) : new Date()}
                         excludeDates={disabledDates}
                         placeholderText={t("Select Check-Out")}
-                        dateFormat="yyyy-MM-dd"
+                        dateFormat={i18n.language?.startsWith('es') ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
                         className="focus:border-primary"
                         wrapperClassName="date-picker-wrapper"
                         withPortal={window.innerWidth < 768}

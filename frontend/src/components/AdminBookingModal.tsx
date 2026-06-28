@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, User, Truck, CheckCircle2, PenTool } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
 import { SignatureModal } from './SignatureModal';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { useTranslation } from 'react-i18next';
 
 interface Customer {
   _id: string;
@@ -17,6 +20,7 @@ interface ATV {
 }
 
 export const AdminBookingModal: React.FC<{ onClose: () => void; onSuccess: () => void }> = ({ onClose, onSuccess }) => {
+  const { t, i18n } = useTranslation();
   const [step, setStep] = useState(1);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [atvs, setAtvs] = useState<ATV[]>([]);
@@ -157,8 +161,48 @@ export const AdminBookingModal: React.FC<{ onClose: () => void; onSuccess: () =>
             <div>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}><CalendarIcon size={16} /> Select Dates</label>
               <div style={{ display: 'flex', gap: '16px' }}>
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ flex: 1, padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} />
-                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ flex: 1, padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} />
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <DatePicker
+                    selected={startDate ? new Date(`${startDate}T12:00:00`) : null}
+                    onChange={(date: Date | null) => {
+                      if (date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const val = `${year}-${month}-${day}`;
+                        setStartDate(val);
+                        if (endDate && val > endDate) {
+                          setEndDate(val);
+                        }
+                      } else {
+                        setStartDate('');
+                      }
+                    }}
+                    dateFormat={i18n.language?.startsWith('es') ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
+                    placeholderText="Start Date"
+                    customInput={<input style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} />}
+                  />
+                </div>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <DatePicker
+                    selected={endDate ? new Date(`${endDate}T12:00:00`) : null}
+                    onChange={(date: Date | null) => {
+                      if (date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const val = `${year}-${month}-${day}`;
+                        setEndDate(val);
+                      } else {
+                        setEndDate('');
+                      }
+                    }}
+                    minDate={startDate ? new Date(`${startDate}T12:00:00`) : undefined}
+                    dateFormat={i18n.language?.startsWith('es') ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
+                    placeholderText="End Date"
+                    customInput={<input style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} />}
+                  />
+                </div>
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
