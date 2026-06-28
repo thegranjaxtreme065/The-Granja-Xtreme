@@ -16,6 +16,7 @@ interface Customer {
 interface ATV {
   _id: string;
   name: string;
+  nameEs?: string;
   ratePerDay: number;
 }
 
@@ -154,8 +155,8 @@ export const AdminBookingModal: React.FC<{ onClose: () => void; onSuccess: () =>
                 onChange={(e) => setSelectedAtvId(e.target.value)}
                 style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
               >
-                <option value="">-- Choose a vehicle --</option>
-                {atvs.map(a => <option key={a._id} value={a._id}>{a.name} - ${a.ratePerDay}/day</option>)}
+                <option value="">-- {t('Choose a vehicle')} --</option>
+                {atvs.map(a => <option key={a._id} value={a._id}>{i18n.language?.startsWith('es') ? (a.nameEs || a.name) : a.name} - ${a.ratePerDay}/{t('day')}</option>)}
               </select>
             </div>
             <div>
