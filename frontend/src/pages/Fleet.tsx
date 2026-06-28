@@ -19,6 +19,11 @@ interface ATV {
     weightLimit: string;
   };
   images: string[];
+  category?: {
+    _id: string;
+    name: string;
+    nameEs?: string;
+  };
 }
 
 const getAtvFallbackImage = (name: string, fallbackUrl: string) => {
@@ -33,11 +38,9 @@ const getAtvFallbackImage = (name: string, fallbackUrl: string) => {
   return fallbackUrl || '/images/polaris_570.png';
 };
 
-const getAtvCategory = (atv: ATV): string => {
-  const lower = (atv.model + ' ' + atv.name).toLowerCase();
-  if (lower.includes('utility') || lower.includes('outlander') || lower.includes('grizzly') || lower.includes('rubicon') || lower.includes('kingquad')) return 'Utility';
-  if (lower.includes('sport') || lower.includes('scrambler') || lower.includes('brute')) return 'Sport';
-  return '4WD';
+const getAtvCategory = (atv: ATV, lang: string): string => {
+  if (!atv.category) return 'Utility';
+  return lang.startsWith('es') && atv.category.nameEs ? atv.category.nameEs : atv.category.name;
 };
 
 const getAtvSeats = (atv: ATV): string => {
@@ -53,21 +56,27 @@ const getBadgeLabel = (atv: ATV, index: number): string | null => {
 };
 
 export const Fleet: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [atvs, setAtvs] = useState<ATV[]>([]);
   const [filteredAtvs, setFilteredAtvs] = useState<ATV[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('popularity');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
     const loadFleet = async () => {
       try {
-        const data = await fetchAPI('/atvs');
-        setAtvs(data);
-        setFilteredAtvs(data);
+        const [atvsData, catData] = await Promise.all([
+          fetchAPI('/atvs'),
+          fetchAPI('/vehicle-categories')
+        ]);
+        setAtvs(atvsData || []);
+        setFilteredAtvs(atvsData || []);
+        setCategories(catData || []);
       } catch (e) {
         console.error('Failed to load fleet.', e);
       } finally {
@@ -82,6 +91,10 @@ export const Fleet: React.FC = () => {
 
     if (filterStatus !== 'ALL') {
       result = result.filter((item) => item.status === filterStatus);
+    }
+
+    if (filterCategory !== 'ALL') {
+      result = result.filter((item) => item.category?._id === filterCategory);
     }
 
     if (searchQuery.trim() !== '') {
@@ -104,7 +117,7 @@ export const Fleet: React.FC = () => {
     }
 
     setFilteredAtvs(result);
-  }, [filterStatus, searchQuery, sortBy, atvs]);
+  }, [filterStatus, filterCategory, searchQuery, sortBy, atvs]);
 
   const toggleFavorite = (id: string) => {
     setFavorites(prev => {
@@ -174,17 +187,42 @@ export const Fleet: React.FC = () => {
             {/* Divider */}
             <div className="fleet-filter-divider" />
 
+            {/* Category Filter */}
+            <div className="fleet-filter-item">
+              <div>
+                <span className="fleet-filter-label">{t('fleet_category_type', 'CATEGORY')}</span>
+                <div className="fleet-filter-select-wrap">
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="fleet-filter-select"
+                  >
+                    <option value="ALL">{t('fleet_filter_all_cats', 'All Categories')}</option>
+                    {categories.map(cat => (
+                      <option key={cat._id} value={cat._id}>
+                        {i18n.language.startsWith('es') && cat.nameEs ? cat.nameEs : cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} style={{ color: 'var(--on-surface-variant)', flexShrink: 0 }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="fleet-filter-divider" />
+
             {/* Vehicle Type */}
             <div className="fleet-filter-item">
               <div>
-                <span className="fleet-filter-label">{t('fleet_vehicle_type', 'VEHICLE TYPE')}</span>
+                <span className="fleet-filter-label">{t('fleet_vehicle_status', 'STATUS')}</span>
                 <div className="fleet-filter-select-wrap">
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                     className="fleet-filter-select"
                   >
-                    <option value="ALL">{t('fleet_filter_all', 'All Types')}</option>
+                    <option value="ALL">{t('fleet_filter_all_status', 'All Statuses')}</option>
                     <option value="AVAILABLE">{t('fleet_filter_avail', 'Available')}</option>
                     <option value="RENTED">{t('fleet_filter_rented', 'Rented')}</option>
                     <option value="MAINTENANCE">{t('fleet_filter_maint', 'Maintenance')}</option>
@@ -239,7 +277,7 @@ export const Fleet: React.FC = () => {
             <div className="fleet-grid">
               {filteredAtvs.map((atv, index) => {
                 const badge = getBadgeLabel(atv, index);
-                const category = getAtvCategory(atv);
+                const category = getAtvCategory(atv, i18n.language);
                 const seats = getAtvSeats(atv);
                 const isFav = favorites.has(atv._id);
 
@@ -291,7 +329,7 @@ export const Fleet: React.FC = () => {
                         <span className="fleet-card-spec-dot">·</span>
                         <span>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
-                          {t(category, category)}
+                          {category}
                         </span>
                       </div>
 

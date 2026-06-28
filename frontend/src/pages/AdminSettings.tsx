@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Bell, Shield, Database } from 'lucide-react';
+import { Settings, Save, Bell, Shield, Database, List } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchAPI } from '../utils/api';
 
@@ -12,6 +12,10 @@ export const AdminSettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('General');
   const [authLogs, setAuthLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryNameEs, setNewCategoryNameEs] = useState('');
+  const [isTranslatingCat, setIsTranslatingCat] = useState(false);
 
   const [settings, setSettings] = useState({
     baseTaxRate: 8.5,
@@ -54,7 +58,78 @@ export const AdminSettings: React.FC = () => {
       };
       loadLogs();
     }
+    if (activeTab === 'Categories') {
+      loadCategories();
+    }
   }, [activeTab]);
+
+  const loadCategories = async () => {
+    try {
+      const data = await fetchAPI('/vehicle-categories');
+      if (data) setCategories(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    try {
+      await fetchAPI('/vehicle-categories', { method: 'POST', body: { name: newCategoryName, nameEs: newCategoryNameEs } });
+      setNewCategoryName('');
+      setNewCategoryNameEs('');
+      setSuccessMsg(t('adminSettings.categoryAdded', 'Category added successfully.'));
+      setTimeout(() => setSuccessMsg(''), 3000);
+      loadCategories();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to add category');
+    }
+  };
+
+  const handleAutoTranslateCategory = async () => {
+    if (!newCategoryName) return;
+    setIsTranslatingCat(true);
+    try {
+      const res = await fetchAPI('/translations', {
+        method: 'POST',
+        body: { text: newCategoryName, targetLang: 'es' }
+      });
+      if (res && res.translated) {
+        setNewCategoryNameEs(res.translated);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsTranslatingCat(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this category?')) return;
+    try {
+      await fetchAPI(`/vehicle-categories/${id}`, { method: 'DELETE' });
+      setSuccessMsg(t('adminSettings.categoryDeleted', 'Category deleted successfully.'));
+      setTimeout(() => setSuccessMsg(''), 3000);
+      loadCategories();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to delete category');
+    }
+  };
+
+  const handleEditCategory = async (id: string, newName: string, newNameEs?: string) => {
+    if (!newName.trim()) return;
+    try {
+      const body: any = { name: newName };
+      if (newNameEs !== undefined) body.nameEs = newNameEs;
+      await fetchAPI(`/vehicle-categories/${id}`, { method: 'PUT', body });
+      setSuccessMsg(t('adminSettings.categoryUpdated', 'Category updated successfully.'));
+      setTimeout(() => setSuccessMsg(''), 3000);
+      loadCategories();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to update category');
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +177,13 @@ export const AdminSettings: React.FC = () => {
               <Bell size={18} /> {t('adminSettings.tabNotifications', 'Notifications')}
             </button>
             <button 
+              type="button"
+              onClick={() => setActiveTab('Categories')}
+              className={`btn ${activeTab === 'Categories' ? '' : 'btn-secondary'}`} 
+              style={{ justifyContent: 'flex-start', textAlign: 'left', ...(activeTab === 'Categories' ? { backgroundColor: 'var(--primary)', color: 'var(--on-primary)' } : { border: 'none', backgroundColor: 'transparent' }) }}>
+              <List size={18} /> {t('adminSettings.tabCategories', 'Categories')}
+            </button>
+            <button 
               type="button" 
               onClick={() => setActiveTab('Security')}
               className={`btn ${activeTab === 'Security' ? '' : 'btn-secondary'}`} 
@@ -120,7 +202,118 @@ export const AdminSettings: React.FC = () => {
 
         {/* Settings Form */}
         <div className="card" style={{ padding: '32px' }}>
+          {activeTab === 'Categories' ? (
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                {t('adminSettings.vehicleCategories', 'Vehicle Categories')}
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)', marginBottom: '24px' }}>
+                {t('adminSettings.categoriesDesc', 'Manage categories for your fleet. New categories will be auto-translated to Spanish.')}
+              </p>
+              
+              <form onSubmit={handleAddCategory} style={{ display: 'flex', gap: '12px', marginBottom: '32px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder={t('adminSettings.newCategoryName', 'e.g. Scooter')}
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  style={{ flex: 1 }}
+                  required
+                />
+                <button 
+                  type="button" 
+                  onClick={handleAutoTranslateCategory} 
+                  disabled={isTranslatingCat || !newCategoryName} 
+                  style={{ background: 'none', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                >
+                  {isTranslatingCat ? t('adminSettings.translating', 'Translating...') : t('adminSettings.autoTranslate', 'Auto-Translate')}
+                </button>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder={t('adminSettings.newCategoryNameEs', 'Nombre en español')}
+                  value={newCategoryNameEs}
+                  onChange={(e) => setNewCategoryNameEs(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <button type="submit" className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
+                  {t('adminSettings.addCategory', 'Add Category')}
+                </button>
+              </form>
+
+              <div className="admin-table-container" style={{ border: '1px solid var(--border)', borderRadius: '8px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: 'var(--surface-container)', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>{t('adminSettings.categoryName', 'Name (English)')}</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>{t('adminSettings.categoryNameEs', 'Name (Spanish)')}</th>
+                      <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600 }}>{t('adminSettings.actions', 'Actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categories.length === 0 ? (
+                      <tr><td colSpan={3} style={{ padding: '16px', textAlign: 'center', color: 'var(--on-surface-variant)' }}>{t('adminSettings.noCategories', 'No categories found.')}</td></tr>
+                    ) : (
+                      categories.map(cat => (
+                        <tr key={cat._id} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '12px' }}>
+                            <input 
+                              type="text" 
+                              defaultValue={cat.name}
+                              className="form-input"
+                              onBlur={(e) => {
+                                if (e.target.value !== cat.name) {
+                                  handleEditCategory(cat._id, e.target.value);
+                                }
+                              }}
+                              style={{ padding: '4px 8px', minHeight: 'auto' }}
+                            />
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            <input 
+                              type="text" 
+                              defaultValue={cat.nameEs || ''}
+                              className="form-input"
+                              placeholder={t('adminSettings.newCategoryNameEs', 'Nombre en español')}
+                              onBlur={(e) => {
+                                if (e.target.value !== (cat.nameEs || '')) {
+                                  handleEditCategory(cat._id, cat.name, e.target.value);
+                                }
+                              }}
+                              style={{ padding: '4px 8px', minHeight: 'auto' }}
+                            />
+                          </td>
+                          <td style={{ padding: '12px', textAlign: 'right' }}>
+                            <button 
+                              type="button"
+                              onClick={() => handleDeleteCategory(cat._id)}
+                              style={{ color: 'var(--error)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}
+                            >
+                              {t('adminSettings.delete', 'Delete')}
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {successMsg && (
+                <div style={{ color: 'var(--success)', backgroundColor: 'rgba(34,197,94,0.1)', padding: '12px', borderRadius: '8px', fontSize: '14px', marginTop: '24px' }}>
+                  {successMsg}
+                </div>
+              )}
+              {errorMsg && (
+                <div style={{ color: 'var(--error)', backgroundColor: 'rgba(239,68,68,0.1)', padding: '12px', borderRadius: '8px', fontSize: '14px', marginTop: '24px' }}>
+                  {errorMsg}
+                </div>
+              )}
+            </div>
+          ) : (
           <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
             {activeTab === 'General' && (
               <>
                 <div>
@@ -345,6 +538,7 @@ export const AdminSettings: React.FC = () => {
               </button>
             )}
           </form>
+          )}
         </div>
       </div>
     </div>

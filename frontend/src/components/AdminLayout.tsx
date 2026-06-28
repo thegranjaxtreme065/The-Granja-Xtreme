@@ -482,6 +482,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
             ) : location.pathname === '/admin/fleet' ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <button 
+                  onClick={() => navigate('/admin/settings')}
+                  style={{
+                    backgroundColor: 'transparent', color: '#4d7c0f', border: '1px solid #4d7c0f', borderRadius: '8px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'
+                  }}
+                >
+                  <Settings size={16} /> {t("Manage Categories")}
+                </button>
+                <button 
                   onClick={() => window.dispatchEvent(new Event('openAddAtvModal'))}
                   style={{
                     backgroundColor: '#4d7c0f', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'

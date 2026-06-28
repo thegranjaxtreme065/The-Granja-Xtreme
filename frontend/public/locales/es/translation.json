@@ -1162,5 +1162,21 @@
   "Add Accessories": "Añadir Accesorios",
   "Rental Charge": "Cargo de Alquiler",
   "Damage Charge": "Cargo por Daños",
-  "Accessory": "Accesorio"
+  "Accessory": "Accesorio",
+  "fleet_category_type": "CATEGORÍA",
+  "fleet_filter_all_cats": "Todas las Categorías",
+  "fleetManager.vehicleCategory": "Categoría del Vehículo",
+  "fleetManager.selectCategory": "Selecciona una categoría...",
+  "Manage Categories": "Gestionar Categorías",
+  "adminSettings.tabCategories": "Categorías",
+  "adminSettings.vehicleCategories": "Categorías de Vehículos",
+  "adminSettings.categoriesDesc": "Gestiona las categorías de tu flota. Puedes usar la traducción automática para los nombres en español.",
+  "adminSettings.newCategoryName": "ej. Scooter",
+  "adminSettings.autoTranslate": "Traducir Automáticamente",
+  "adminSettings.newCategoryNameEs": "Nombre en español",
+  "adminSettings.addCategory": "Añadir Categoría",
+  "adminSettings.categoryName": "Nombre (Inglés)",
+  "adminSettings.categoryNameEs": "Nombre (Español)",
+  "adminSettings.translating": "Traduciendo...",
+  "fleetManager.allCategories": "Todas las Categorías"
 }

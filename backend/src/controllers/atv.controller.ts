@@ -20,6 +20,7 @@ const createAtvSchema = z.object({
   description: z.string().min(1),
   specs: specsSchema,
   images: z.array(z.string()).default([]),
+  category: z.string().optional(),
   currentOdometer: z.number().nonnegative().default(0),
   currentFuelLevel: z.number().min(0).max(100).default(100)
 });
@@ -68,7 +69,7 @@ export const getAllAtvs = async (req: Request, res: Response): Promise<void> => 
       filter.status = status;
     }
 
-    const atvs = await Atv.find(filter).sort({ createdAt: -1 });
+    const atvs = await Atv.find(filter).populate('category').sort({ createdAt: -1 });
     res.status(200).json(atvs);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch ATVs.', error: (error as Error).message });
@@ -78,7 +79,7 @@ export const getAllAtvs = async (req: Request, res: Response): Promise<void> => 
 export const getAtvById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const atv = await Atv.findById(id);
+    const atv = await Atv.findById(id).populate('category');
     if (!atv) {
       res.status(404).json({ message: 'ATV not found.' });
       return;

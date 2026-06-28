@@ -24,17 +24,24 @@ interface ATV {
     weightLimit: string;
   };
   images: string[];
+  category?: {
+    _id: string;
+    name: string;
+    nameEs?: string;
+  };
 }
 
 export const FleetManager: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [atvs, setAtvs] = useState<ATV[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showMaintModal, setShowMaintModal] = useState(false);
   const [selectedAtvId, setSelectedAtvId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'AVAILABLE' | 'MAINTENANCE' | 'RENTED'>('ALL');
+  const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isTranslatingTitle, setIsTranslatingTitle] = useState(false);
@@ -55,6 +62,7 @@ export const FleetManager: React.FC = () => {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [status, setStatus] = useStickyState<string>('AVAILABLE', 'atv_status');
+  const [categoryId, setCategoryId] = useStickyState<string>('', 'atv_category');
   const [errorMsg, setErrorMsg] = useState('');
 
   // Form states for Maintenance log
@@ -65,8 +73,12 @@ export const FleetManager: React.FC = () => {
 
   const loadFleet = async () => {
     try {
-      const data = await fetchAPI('/atvs');
-      setAtvs(data);
+      const [atvsData, categoriesData] = await Promise.all([
+        fetchAPI('/atvs'),
+        fetchAPI('/vehicle-categories')
+      ]);
+      setAtvs(atvsData || []);
+      setCategories(categoriesData || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -88,6 +100,7 @@ export const FleetManager: React.FC = () => {
     setWeightLimit('485 lbs');
     setImageUrls([]);
     setStatus('AVAILABLE');
+    setCategoryId('');
     setErrorMsg('');
   };
 
@@ -159,6 +172,7 @@ export const FleetManager: React.FC = () => {
           hourlyRate,
           description,
           descriptionEs,
+          category: categoryId || undefined,
           specs: { displacement, fuelCapacity, weightLimit },
           images
         }
@@ -205,6 +219,7 @@ export const FleetManager: React.FC = () => {
     setWeightLimit(atv.specs.weightLimit);
     setImageUrls(atv.images || []);
     setStatus(atv.status);
+    setCategoryId(atv.category?._id || '');
     setErrorMsg('');
     setShowEditModal(true);
   };
@@ -226,6 +241,7 @@ export const FleetManager: React.FC = () => {
           hourlyRate,
           description,
           descriptionEs,
+          category: categoryId || undefined,
           status,
           specs: { displacement, fuelCapacity, weightLimit },
           images
@@ -313,6 +329,16 @@ export const FleetManager: React.FC = () => {
         </div>
       </div>
 
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>{t('fleetManager.vehicleCategory', 'Vehicle Category')}</label>
+        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} style={{ width: '100%', padding: '10px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}>
+          <option value="">{t('fleetManager.selectCategory', 'Select a category...')}</option>
+          {categories.map(cat => (
+            <option key={cat._id} value={cat._id}>{cat.name}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="checkout-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
         <div>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>{t('fleetManager.displacement', 'Displacement')}</label>
@@ -392,6 +418,9 @@ export const FleetManager: React.FC = () => {
   const countByStatus = (status: string) => atvs.filter(a => a.status === status).length;
   
   let filteredAtvs = filter === 'ALL' ? atvs : atvs.filter(a => a.status === filter);
+  if (filterCategory !== 'ALL') {
+    filteredAtvs = filteredAtvs.filter(a => a.category?._id === filterCategory);
+  }
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
     filteredAtvs = filteredAtvs.filter(a => a.name.toLowerCase().includes(q) || a.model.toLowerCase().includes(q) || a._id.toLowerCase().includes(q));
@@ -418,7 +447,7 @@ export const FleetManager: React.FC = () => {
       }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'space-between', alignItems: 'center' }}>
           
-          <div style={{ position: 'relative', flex: '0 1 350px' }}>
+          <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: '300px' }}>
             <Search size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
             <input 
               type="text" 
@@ -431,8 +460,25 @@ export const FleetManager: React.FC = () => {
             />
           </div>
 
+          <div style={{ flex: '0 1 180px' }}>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              style={{
+                width: '100%', padding: '10px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', fontSize: '14px', color: '#334155', outline: 'none'
+              }}
+            >
+              <option value="ALL">{t('fleetManager.allCategories', 'All Categories')}</option>
+              {categories.map(cat => (
+                <option key={cat._id} value={cat._id}>
+                  {i18n.language.startsWith('es') && cat.nameEs ? cat.nameEs : cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Filter Tabs */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', flex: 1, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', flex: '2 1 auto', justifyContent: 'center' }}>
             <button 
               onClick={() => setFilter('ALL')}
               style={{ padding: '8px 16px', borderRadius: '24px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', border: 'none', backgroundColor: filter === 'ALL' ? '#4d7c0f' : '#f8fafc', color: filter === 'ALL' ? 'white' : '#64748b', whiteSpace: 'nowrap' }}

@@ -22,6 +22,7 @@ import maintenanceRoutes from './routes/maintenance.routes';
 import invoiceRoutes from './routes/invoice.routes';
 import translationRoutes from './routes/translation.routes';
 import accessoryRoutes from './routes/accessory.routes';
+import vehicleCategoryRoutes from './routes/vehicle_category.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 
@@ -100,6 +101,7 @@ app.use('/api/v1/maintenance', maintenanceRoutes);
 app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/translations', translationRoutes);
 app.use('/api/v1/accessories', accessoryRoutes);
+app.use('/api/v1/vehicle-categories', vehicleCategoryRoutes);
 
 // Global Error Middleware
 app.use(errorHandler as any);
