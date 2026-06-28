@@ -178,6 +178,7 @@ export const AdminBookingModal: React.FC<{ onClose: () => void; onSuccess: () =>
                         setStartDate('');
                       }
                     }}
+                    minDate={new Date()}
                     dateFormat={i18n.language?.startsWith('es') ? 'dd/MM/yyyy' : 'MM/dd/yyyy'}
                     placeholderText="Start Date"
                     customInput={<input style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} />}
