@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, CalendarDays, Truck, Package, Bell, Plus, Users, FileEdit, Settings, UserCog, ShieldAlert, MessageSquare, Globe, DollarSign, Menu, X } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, Truck, Package, Bell, Plus, Users, FileEdit, Settings, UserCog, ShieldAlert, MessageSquare, Globe, DollarSign, Menu, X, LogOut } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
 import { auth } from '../config/firebase';
 import { useTranslation } from 'react-i18next';
@@ -267,8 +267,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
           ))}
         </nav>
 
-        {/* Back to Website */}
-        <div style={{ padding: '0 16px 24px 16px' }}>
+        {/* Back to Website & Logout */}
+        <div style={{ padding: '0 16px 24px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <NavLink
             to="/"
             style={{
@@ -296,6 +296,38 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ user }) => {
             <Globe size={18} />
             {t("Back to Website")}
           </NavLink>
+
+          <button
+            onClick={() => {
+              auth.signOut().then(() => navigate('/'));
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: 'none',
+              width: '100%',
+              textAlign: 'left',
+              fontWeight: 600,
+              fontSize: '14px',
+              color: '#ef4444',
+              backgroundColor: 'transparent',
+              transition: 'all 0.2s',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <LogOut size={18} />
+            {t("Logout")}
+          </button>
         </div>
       </aside>
 
