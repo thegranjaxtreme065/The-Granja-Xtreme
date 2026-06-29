@@ -274,6 +274,7 @@ export const FleetManager: React.FC = () => {
           model,
           unitNumber,
           color,
+          colorEs,
           year,
           ratePerDay,
           hourlyRate,
