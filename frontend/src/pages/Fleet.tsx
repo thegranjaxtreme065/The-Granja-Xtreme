@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, Heart, ChevronDown, SlidersHorizontal, Calendar, Settings2 } from 'lucide-react';
+
+import { formatAtvName } from '../utils/formatAtv';
 import { fetchAPI } from '../utils/api';
 import { SkeletonGrid } from '../components/Skeletons';
 
@@ -305,7 +307,7 @@ export const Fleet: React.FC = () => {
                     <div className="fleet-card-body">
                       {/* Name + Heart */}
                       <div className="fleet-card-name-row">
-                        <h3 className="fleet-card-name">{atv.name}</h3>
+                        <h3 className="fleet-card-name">{formatAtvName({...atv, model: undefined})}</h3>
                         <button
                           className={`fleet-card-heart ${isFav ? 'active' : ''}`}
                           onClick={() => toggleFavorite(atv._id)}

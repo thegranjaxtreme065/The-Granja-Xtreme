@@ -14,12 +14,14 @@ import {
   checkinBooking,
   checkoutBooking,
   uploadCustomerSignature,
-  uploadAdminSignature
+  uploadAdminSignature,
+  createCompleteBooking
 } from '../controllers/booking.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
 
 const router = Router();
 
+router.post('/complete', protect as any, createCompleteBooking as any);
 router.post('/', protect as any, createBooking as any);
 router.get('/my', protect as any, getMyBookings as any);
 router.get('/:id', protect as any, getBookingById as any);

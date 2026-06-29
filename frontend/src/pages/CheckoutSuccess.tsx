@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, Copy, MapPin, Grid, FileText, Info } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
+import { formatAtvName } from '../utils/formatAtv';
 import { useTranslation } from 'react-i18next';
 
 interface Booking {
@@ -175,7 +176,7 @@ export const CheckoutSuccess: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#64748b' }}>{t("Experience")}</span>
-                <span style={{ color: '#0f172a', fontWeight: 600 }}>{booking.atvId.name}</span>
+                <span style={{ color: '#0f172a', fontWeight: 600 }}>{formatAtvName(booking.atvId)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#64748b' }}>{t("Vehicle")}</span>

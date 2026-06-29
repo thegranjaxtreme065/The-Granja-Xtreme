@@ -48,6 +48,7 @@ export const AdminUpcomingBookings: React.FC = () => {
   const [chargeReason, setChargeReason] = useState('Damage');
   const [chargeDescription, setChargeDescription] = useState('');
   const [chargeAmount, setChargeAmount] = useState('');
+  const [processRefund, setProcessRefund] = useState(true);
 
   const [availableAccessories, setAvailableAccessories] = useState<Accessory[]>([]);
   const [selectedAccessories, setSelectedAccessories] = useState<{ accessoryId: string; name: string; quantity: number; price: number }[]>([]);
@@ -90,6 +91,7 @@ export const AdminUpcomingBookings: React.FC = () => {
   const openCheckOut = (b: Booking) => {
     setActiveBooking(b);
     setExtraCharges([]);
+    setProcessRefund(true);
     setCheckOutModalOpen(true);
   };
 
@@ -132,7 +134,7 @@ export const AdminUpcomingBookings: React.FC = () => {
     try {
       await fetchAPI(`/bookings/${activeBooking._id}/checkout`, {
         method: 'POST',
-        body: { actualCheckOutTime: new Date().toISOString(), extraCharges }
+        body: { actualCheckOutTime: new Date().toISOString(), extraCharges, processRefund }
       });
       setCheckOutModalOpen(false);
       loadBookings();
@@ -454,6 +456,19 @@ export const AdminUpcomingBookings: React.FC = () => {
                 />
                 <button onClick={addExtraCharge} style={{ padding: '10px 16px', backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}>{t("Add")}</button>
               </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+              <input 
+                type="checkbox" 
+                id="processRefund"
+                checked={processRefund}
+                onChange={e => setProcessRefund(e.target.checked)}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+              />
+              <label htmlFor="processRefund" style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', cursor: 'pointer' }}>
+                {t("Process Security Deposit Refund Automatically")}
+              </label>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>

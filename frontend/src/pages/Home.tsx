@@ -5,6 +5,8 @@ import { ShieldCheck, ArrowRight, Eye, Lock, Star, Compass, Mountain, Zap } from
 import { SkeletonGrid } from '../components/Skeletons';
 import { fetchAPI } from '../utils/api';
 
+import { formatAtvName } from '../utils/formatAtv';
+
 interface ATV {
   _id: string;
   name: string;
@@ -289,7 +291,7 @@ export const Home: React.FC = () => {
                     
                     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: 700 }}>{atv.name}</h3>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700 }}>{formatAtvName({...atv, model: undefined})}</h3>
                         <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--primary-dark)' }}>${atv.ratePerDay}/Day</span>
                       </div>
                       

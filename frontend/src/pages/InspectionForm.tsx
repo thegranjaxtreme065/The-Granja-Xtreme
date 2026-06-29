@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, RefreshCw } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
+import { formatAtvName } from '../utils/formatAtv';
 
 interface Booking {
   _id: string;
@@ -214,7 +215,7 @@ export const InspectionForm: React.FC = () => {
             ATV {type === 'CHECK_OUT' ? 'Check-Out Departure' : 'Return Check-In'} Audit
           </h2>
           <p style={{ color: 'var(--on-surface-variant)', fontSize: '14px', marginTop: '6px' }}>
-            Booking ID: <strong>{booking._id}</strong> | Client: <strong>{booking.customerId.firstName} {booking.customerId.lastName}</strong>
+            Booking ID: <strong>{booking._id}</strong> | ATV: <strong>{formatAtvName(booking.atvId)}</strong> | Client: <strong>{booking.customerId.firstName} {booking.customerId.lastName}</strong>
           </p>
         </div>
 

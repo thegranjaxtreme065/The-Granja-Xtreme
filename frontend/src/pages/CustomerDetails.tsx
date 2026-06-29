@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchAPI } from '../utils/api';
 import { ArrowLeft, Mail, Phone, Calendar, Banknote, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatAtvName } from '../utils/formatAtv';
 
 interface Booking {
   _id: string;
@@ -159,7 +160,7 @@ export const CustomerDetails: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <img src={booking.atvId?.images?.[0] || 'https://via.placeholder.com/60'} alt="ATV" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
                       <div>
-                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>{booking.atvId?.name} {booking.atvId?.model}</div>
+                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>{formatAtvName(booking.atvId)}</div>
                         <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
                           {new Date(booking.startDate).toLocaleString()} — {new Date(booking.endDate).toLocaleString()}
                         </div>

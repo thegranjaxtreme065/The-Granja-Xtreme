@@ -5,6 +5,7 @@ import { SignatureModal } from './SignatureModal';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useTranslation } from 'react-i18next';
+import { formatAtvName } from '../utils/formatAtv';
 
 interface Customer {
   _id: string;
@@ -17,6 +18,9 @@ interface ATV {
   _id: string;
   name: string;
   nameEs?: string;
+  model: string;
+  unitNumber?: string;
+  color?: string;
   ratePerDay: number;
 }
 
@@ -68,6 +72,23 @@ export const AdminBookingModal: React.FC<{ onClose: () => void; onSuccess: () =>
     const tax = Math.round(baseRate * 0.1 * 100) / 100; // 10% tax
     const securityDeposit = 150; // Flat deposit
     return baseRate + tax + securityDeposit;
+  };
+
+  const handleReviewConfirm = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await fetchAPI(`/atvs/${selectedAtvId}/availability?start=${startDate}&end=${endDate}`);
+      if (!result.available) {
+        setError(result.reason || 'This ATV is already booked or unavailable for the selected dates.');
+        return;
+      }
+      setStep(3);
+    } catch (err: any) {
+      setError(err.message || 'Failed to check availability');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -156,7 +177,10 @@ export const AdminBookingModal: React.FC<{ onClose: () => void; onSuccess: () =>
                 style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
               >
                 <option value="">-- {t('Choose a vehicle')} --</option>
-                {atvs.map(a => <option key={a._id} value={a._id}>{i18n.language?.startsWith('es') ? (a.nameEs || a.name) : a.name} - ${a.ratePerDay}/{t('day')}</option>)}
+                {atvs.map(a => {
+                  const displayName = i18n.language?.startsWith('es') ? (a.nameEs || a.name) : a.name;
+                  return <option key={a._id} value={a._id}>{formatAtvName({...a, name: displayName})} - ${a.ratePerDay}/{t('day')}</option>;
+                })}
               </select>
             </div>
             <div>
@@ -210,10 +234,10 @@ export const AdminBookingModal: React.FC<{ onClose: () => void; onSuccess: () =>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
               <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}>Back</button>
               <button 
-                disabled={!selectedAtvId || !startDate || !endDate}
-                onClick={() => setStep(3)}
-                style={{ backgroundColor: (selectedAtvId && startDate && endDate) ? '#4d7c0f' : '#94a3b8', color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', fontWeight: 700, cursor: (selectedAtvId && startDate && endDate) ? 'pointer' : 'not-allowed' }}
-              >Review & Confirm</button>
+                disabled={!selectedAtvId || !startDate || !endDate || loading}
+                onClick={handleReviewConfirm}
+                style={{ backgroundColor: (selectedAtvId && startDate && endDate && !loading) ? '#4d7c0f' : '#94a3b8', color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', fontWeight: 700, cursor: (selectedAtvId && startDate && endDate && !loading) ? 'pointer' : 'not-allowed' }}
+              >{loading ? 'Checking...' : 'Review & Confirm'}</button>
             </div>
           </div>
         )}

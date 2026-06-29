@@ -18,14 +18,22 @@ export const adminCreateBooking = async (req: Request, res: Response): Promise<v
   try {
     let { atvId, customerId, startDate, endDate, notes } = req.body;
     
-    if (typeof startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      startDate = new Date(`${startDate}T12:00:00-04:00`);
+    if (typeof startDate === 'string') {
+      const datePart = startDate.split('T')[0];
+      startDate = new Date(`${datePart}T12:00:00-04:00`);
+    } else if (startDate instanceof Date) {
+      const datePart = startDate.toISOString().split('T')[0];
+      startDate = new Date(`${datePart}T12:00:00-04:00`);
     } else {
       startDate = new Date(startDate);
     }
 
-    if (typeof endDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-      endDate = new Date(`${endDate}T12:00:00-04:00`);
+    if (typeof endDate === 'string') {
+      const datePart = endDate.split('T')[0];
+      endDate = new Date(`${datePart}T12:00:00-04:00`);
+    } else if (endDate instanceof Date) {
+      const datePart = endDate.toISOString().split('T')[0];
+      endDate = new Date(`${datePart}T12:00:00-04:00`);
     } else {
       endDate = new Date(endDate);
     }
@@ -35,14 +43,13 @@ export const adminCreateBooking = async (req: Request, res: Response): Promise<v
       res.status(404).json({ message: 'ATV not found' });
       return;
     }
+    if (atv.status === 'MAINTENANCE' || atv.status === 'DECOMMISSIONED') {
+      res.status(400).json({ message: `This ATV is currently under maintenance or decommissioned.` });
+      return;
+    }
     
     // Check overlapping
-    const overlapping = await Booking.findOne({
-      atvId,
-      status: { $in: ['Upcoming', 'Active'] },
-      startDate: { $lt: new Date(endDate) },
-      endDate: { $gt: new Date(startDate) }
-    });
+    const overlapping = await isAtvBooked(atvId, startDate, endDate);
 
     if (overlapping) {
       res.status(400).json({ message: 'ATV is already booked for these dates' });
@@ -94,14 +101,38 @@ import { logActivity } from './logs.controller';
 const createBookingSchema = z.object({
   atvId: z.string(),
   startDate: z.string().transform((val) => {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return new Date(`${val}T12:00:00-04:00`);
-    return new Date(val);
+    const datePart = val.split('T')[0];
+    return new Date(`${datePart}T12:00:00-04:00`);
   }),
   endDate: z.string().transform((val) => {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return new Date(`${val}T12:00:00-04:00`);
-    return new Date(val);
+    const datePart = val.split('T')[0];
+    return new Date(`${datePart}T12:00:00-04:00`);
   }),
   notes: z.string().optional()
+});
+
+const createCompleteBookingSchema = z.object({
+  atvId: z.string(),
+  startDate: z.string().transform((val) => {
+    const datePart = val.split('T')[0];
+    return new Date(`${datePart}T12:00:00-04:00`);
+  }),
+  endDate: z.string().transform((val) => {
+    const datePart = val.split('T')[0];
+    return new Date(`${datePart}T12:00:00-04:00`);
+  }),
+  notes: z.string().optional(),
+  customerName: z.string().min(1, 'Name is required'),
+  agreedToTerms: z.boolean().refine(val => val === true, {
+    message: 'You must agree to the terms.'
+  }),
+  termsVersion: z.string(),
+  passport: z.string().min(1, 'Passport / ID number is required'),
+  signatureUrl: z.string().min(1, 'Signature URL is required'),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional()
 });
 
 const signWaiverSchema = z.object({
@@ -182,11 +213,14 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
 
     // Pricing calculation
     const durationMs = endDate.getTime() - startDate.getTime();
-    const durationDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)));
+    const durationDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + 1);
+
+    const settings = await Settings.findOne();
+    const taxRate = settings?.baseTaxRate ? settings.baseTaxRate / 100 : 0.1;
+    const securityDeposit = settings?.securityDeposit || 150;
 
     const baseRate = durationDays * atv.ratePerDay;
-    const tax = Math.round(baseRate * 0.1 * 100) / 100; // 10% tax
-    const securityDeposit = 150; // Flat deposit
+    const tax = Math.round(baseRate * taxRate * 100) / 100;
     const discount = 0;
 
     const bookingNumber = await getNextTgxNumber('booking');
@@ -200,7 +234,6 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
       notes
     });
 
-    const settings = await Settings.findOne();
     const shouldNotify = !settings || !settings.notifications || settings.notifications.newOrder !== false;
     if (shouldNotify) {
       await Notification.create({
@@ -213,6 +246,131 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
     res.status(201).json(newBooking);
   } catch (error) {
     res.status(500).json({ message: 'Failed to create booking.', error: (error as Error).message });
+  }
+};
+
+export const createCompleteBooking = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    const parsed = createCompleteBookingSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: 'Invalid booking data input.', errors: parsed.error.format() });
+      return;
+    }
+
+    const { atvId, startDate, endDate, notes, customerName, agreedToTerms, termsVersion, passport, signatureUrl, firstName, lastName, email, phone } = parsed.data;
+
+    if (startDate > endDate) {
+      res.status(400).json({ message: 'Start date must be before end date.' });
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (startDate < today) {
+      res.status(400).json({ message: 'Start date cannot be in the past.' });
+      return;
+    }
+
+    const atv = await Atv.findById(atvId);
+    if (!atv) {
+      res.status(404).json({ message: 'ATV not found.' });
+      return;
+    }
+
+    if (atv.status === 'MAINTENANCE' || atv.status === 'DECOMMISSIONED') {
+      res.status(400).json({ message: `This ATV is currently under maintenance or decommissioned.` });
+      return;
+    }
+
+    const booked = await isAtvBooked(atvId, startDate, endDate);
+    if (booked) {
+      res.status(400).json({ message: 'ATV is already reserved for the selected date range.' });
+      return;
+    }
+
+    const user = await User.findById(req.user._id);
+    if (user) {
+      if (passport) user.passport = passport;
+      if (firstName) user.firstName = firstName;
+      if (lastName) user.lastName = lastName;
+      if (email) user.email = email;
+      if (phone) user.phone = phone;
+      await user.save();
+    }
+
+    const bookingNumber = await getNextTgxNumber('booking');
+    const newBooking = await Booking.create({
+      bookingNumber,
+      customerId: req.user._id,
+      atvId: new Types.ObjectId(atvId),
+      startDate,
+      endDate,
+      status: 'Customer Signed', 
+      customerSignature: signatureUrl,
+      customerSignedAt: new Date(),
+      notes
+    });
+
+    const contractNumber = await getNextTgxNumber('contract');
+    const waiver = await Waiver.create({
+      contractNumber,
+      bookingId: newBooking._id,
+      customerName,
+      agreedToTerms,
+      ipAddress: req.ip || '127.0.0.1',
+      termsVersion
+    });
+
+    newBooking.signedWaiverId = waiver._id as Types.ObjectId;
+    await newBooking.save();
+
+    const durationMs = endDate.getTime() - startDate.getTime();
+    const durationDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + 1);
+    const settings = await Settings.findOne();
+    const taxRate = settings?.baseTaxRate ? settings.baseTaxRate / 100 : 0.1;
+    const securityDeposit = settings?.securityDeposit || 150;
+
+    const baseRate = durationDays * atv.ratePerDay;
+    const tax = Math.round(baseRate * taxRate * 100) / 100;
+    const total = baseRate + tax + securityDeposit;
+
+    const invoiceNumber = await getNextTgxNumber('invoice');
+    await Invoice.create({
+      invoiceNumber,
+      bookingId: newBooking._id,
+      customerId: req.user._id,
+      atvId: new Types.ObjectId(atvId),
+      invoiceType: 'Rental Charge',
+      description: 'Standard ATV Rental',
+      amount: total,
+      balance: total,
+      status: 'Unpaid',
+      dueDate: new Date(startDate)
+    });
+
+    const shouldNotify = !settings || !settings.notifications || settings.notifications.newOrder !== false;
+    if (shouldNotify) {
+      await Notification.create({
+        title: 'New Booking',
+        message: `New booking #${bookingNumber} confirmed.`,
+        link: '/admin/upcoming-bookings'
+      });
+    }
+
+    const emailSubject = `Adventure Secured! Booking Confirmed - The Granja Xtreme`;
+    const emailText = `Hi ${firstName || user?.firstName},\n\nYour ATV rental booking for the ${atv.name} (${atv.model}) has been successfully confirmed!\n\nBooking Details:\n- Booking ID: ${newBooking._id}\n- Start Date: ${startDate.toDateString()}\n- End Date: ${endDate.toDateString()}\n\nYou can access your contract in your dashboard: https://thegranjaxtreme.com/dashboard\n\nSee you on the trails!\n\nBest regards,\nThe Granja Xtreme Team`;
+    
+    await sendEmail(email || user?.email || '', emailSubject, emailText);
+    await logActivity(`Complete booking created for ATV ${atv.model}`, req.user.email, req.ip || '', 'success');
+
+    res.status(201).json({ message: 'Booking completed successfully', bookingId: newBooking._id });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to complete booking.', error: (error as Error).message });
   }
 };
 
@@ -235,11 +393,16 @@ export const getMyBookings = async (req: AuthenticatedRequest, res: Response): P
     
     const bookingsWithPayment = bookings.map(b => {
       const invoice = invoices.find(inv => inv.bookingId.toString() === b._id.toString());
-      const paymentRec = payments.find(p => p.bookingId.toString() === b._id.toString());
+      const paymentRec = payments.find(p => p.bookingId.toString() === b._id.toString() && p.paymentMethod !== 'Refund');
       return {
         ...b,
         finalTotal: invoice ? invoice.amount : 0,
-        payment: invoice ? { status: invoice.status, method: paymentRec ? paymentRec.paymentMethod : 'Pending', amountPaid: invoice.amount - invoice.balance } : null
+        payment: invoice ? { 
+          status: invoice.status, 
+          method: paymentRec ? paymentRec.paymentMethod : 'Pending', 
+          amountPaid: (invoice.amount - invoice.balance),
+          remainingAmount: invoice.balance
+        } : null
       };
     });
 
@@ -274,7 +437,7 @@ export const getBookingById = async (req: AuthenticatedRequest, res: Response): 
     }
 
     const invoice = await Invoice.findOne({ bookingId: booking._id }).lean();
-    const paymentRec = await Payment.findOne({ bookingId: booking._id }).sort({ createdAt: -1 }).lean();
+    const paymentRec = await Payment.findOne({ bookingId: booking._id, paymentMethod: { $ne: 'Refund' } }).sort({ createdAt: -1 }).lean();
     
     const bookingWithPayment = {
       ...booking.toObject(),
@@ -282,7 +445,7 @@ export const getBookingById = async (req: AuthenticatedRequest, res: Response): 
       payment: invoice ? {
         status: invoice.status,
         method: paymentRec ? paymentRec.paymentMethod : 'Pending',
-        amountPaid: invoice.amount - invoice.balance,
+        amountPaid: (invoice.amount - invoice.balance),
         remainingAmount: invoice.balance
       } : null
     };
@@ -322,14 +485,14 @@ export const getAllBookings = async (_req: Request, res: Response): Promise<void
     
     const bookingsWithPayment = bookings.map(b => {
       const invoice = invoices.find(inv => inv.bookingId.toString() === b._id.toString());
-      const paymentRec = payments.find(p => p.bookingId.toString() === b._id.toString());
+      const paymentRec = payments.find(p => p.bookingId.toString() === b._id.toString() && p.paymentMethod !== 'Refund');
       return {
         ...b,
         finalTotal: invoice ? invoice.amount : 0,
         payment: invoice ? { 
           status: invoice.status, 
           method: paymentRec ? paymentRec.paymentMethod : 'Pending', 
-          amountPaid: invoice.amount - invoice.balance,
+          amountPaid: (invoice.amount - invoice.balance),
           remainingAmount: invoice.balance 
         } : null
       };
@@ -394,11 +557,14 @@ export const signWaiver = async (req: AuthenticatedRequest, res: Response): Prom
 
     // Create Invoice when waiver is signed and booking becomes Upcoming
     const durationMs = booking.endDate.getTime() - booking.startDate.getTime();
-    const durationDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)));
+    const durationDays = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60 * 24)) + 1);
     const atv: any = booking.atvId;
+    const settings = await Settings.findOne();
+    const taxRate = settings?.baseTaxRate ? settings.baseTaxRate / 100 : 0.1;
+    const securityDeposit = settings?.securityDeposit || 150;
+
     const baseRate = durationDays * (atv?.ratePerDay || 0);
-    const tax = Math.round(baseRate * 0.1 * 100) / 100; // 10% tax
-    const securityDeposit = 150; // Flat deposit
+    const tax = Math.round(baseRate * taxRate * 100) / 100;
     const total = baseRate + tax + securityDeposit;
 
     const invoiceNumber = await getNextTgxNumber('invoice');
@@ -594,6 +760,14 @@ export const updateBookingStatus = async (req: AuthenticatedRequest, res: Respon
     if (!booking) {
       res.status(404).json({ message: 'Booking not found.' });
       return;
+    }
+
+    if (status === 'Upcoming' || status === 'Active') {
+      const isOverlapping = await isAtvBooked(booking.atvId.toString(), booking.startDate, booking.endDate, booking._id.toString());
+      if (isOverlapping) {
+        res.status(400).json({ message: 'Cannot update status. The ATV is already booked for these dates.' });
+        return;
+      }
     }
 
     booking.status = status;
@@ -802,7 +976,7 @@ export const checkinBooking = async (req: AuthenticatedRequest, res: Response): 
 export const checkoutBooking = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { actualCheckOutTime, extraCharges } = req.body;
+    const { actualCheckOutTime, extraCharges, processRefund } = req.body;
 
     const booking = await Booking.findById(id).populate('atvId');
     if (!booking) { res.status(404).json({message: 'Booking not found.'}); return; }
@@ -810,9 +984,11 @@ export const checkoutBooking = async (req: AuthenticatedRequest, res: Response):
     booking.status = 'Completed';
     booking.actualCheckOutTime = actualCheckOutTime ? new Date(actualCheckOutTime) : new Date();
 
+    let extrasSum = 0;
+
     if (extraCharges && Array.isArray(extraCharges) && extraCharges.length > 0) {
       booking.extraCharges = extraCharges;
-      const extrasSum = extraCharges.reduce((acc, charge) => acc + Number(charge.amount), 0);
+      extrasSum = extraCharges.reduce((acc, charge) => acc + Number(charge.amount), 0);
       booking.finalTotal = (booking.finalTotal || 0) + extrasSum;
       
       const mainInvoice = await Invoice.findOne({ bookingId: booking._id, invoiceType: 'Rental Charge' });
@@ -841,6 +1017,36 @@ export const checkoutBooking = async (req: AuthenticatedRequest, res: Response):
           status: 'Unpaid',
           dueDate: new Date()
         });
+      }
+    }
+
+    if (processRefund) {
+      const settings = await Settings.findOne();
+      const securityDeposit = settings?.securityDeposit || 150;
+      const refundAmount = Math.max(0, securityDeposit - extrasSum);
+      booking.depositRefunded = true;
+      booking.depositRefundedAmount = refundAmount;
+
+      if (refundAmount > 0) {
+        const mainInvoice = await Invoice.findOne({ bookingId: booking._id, invoiceType: 'Rental Charge' });
+        if (mainInvoice) {
+          mainInvoice.amount -= refundAmount;
+          mainInvoice.balance = Math.max(0, mainInvoice.balance - refundAmount);
+          mainInvoice.description = `${mainInvoice.description}\n- Deposit Refund: $${refundAmount.toFixed(2)}`;
+          await mainInvoice.save();
+          
+          const receiptNumber = await getNextTgxNumber('receipt');
+          await Payment.create({
+            receiptNumber,
+            invoiceId: mainInvoice._id,
+            bookingId: booking._id,
+            customerId: booking.customerId,
+            amount: -refundAmount,
+            paymentMethod: 'Refund',
+            status: 'Refunded',
+            collectedBy: req.user?._id
+          });
+        }
       }
     }
 

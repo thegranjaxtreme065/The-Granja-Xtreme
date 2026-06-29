@@ -25,6 +25,9 @@ export interface IAtv {
   name: string;
   nameEs?: string;
   model: string;
+  unitNumber?: string;
+  color?: string;
+  colorEs?: string;
   category?: Schema.Types.ObjectId | any; // To allow populate
   year: number;
   status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' | 'DECOMMISSIONED';
@@ -68,6 +71,9 @@ const atvSchema = new Schema<IAtv>(
     name: { type: String, required: true, trim: true },
     nameEs: { type: String },
     model: { type: String, required: true, trim: true },
+    unitNumber: { type: String, trim: true },
+    color: { type: String, trim: true },
+    colorEs: { type: String, trim: true },
     category: { type: Schema.Types.ObjectId, ref: 'VehicleCategory' },
     year: { type: Number, required: true },
     status: {

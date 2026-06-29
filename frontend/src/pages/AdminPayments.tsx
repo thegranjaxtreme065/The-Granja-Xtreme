@@ -5,6 +5,7 @@ import { AdminCollectPaymentModal } from '../components/AdminCollectPaymentModal
 import { AdminBookingDetailsModal } from '../components/AdminBookingDetailsModal';
 import { auth } from '../config/firebase';
 import { useTranslation } from 'react-i18next';
+import { formatAtvName } from '../utils/formatAtv';
 
 export function AdminPayments() {
   const { t } = useTranslation();
@@ -215,7 +216,7 @@ export function AdminPayments() {
                     <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{inv.customerId?.phone}</div>
                   </td>
                   <td style={{ padding: '1rem' }}>
-                    <div>{inv.atvId?.name} {inv.atvId?.model}</div>
+                    <div>{formatAtvName(inv.atvId)}</div>
                     <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{t(inv.invoiceType || '')}</div>
                   </td>
                   <td style={{ padding: '1rem', fontWeight: '500' }}>${inv.amount.toFixed(2)}</td>
@@ -239,7 +240,7 @@ export function AdminPayments() {
                       const invPayments = payments.filter(p => {
                         const pid = p.invoiceId?._id || p.invoiceId;
                         const iid = inv._id;
-                        return String(pid) === String(iid);
+                        return String(pid) === String(iid) && p.paymentMethod !== 'Refund';
                       });
                       if (invPayments.length > 0) {
                         return t(invPayments[0].paymentMethod || 'Paid');

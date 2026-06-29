@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ShieldCheck, Edit3, Clock, Users, Calendar, Info, Lock, Shield, CheckSquare, Square } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
+import { formatAtvName } from '../utils/formatAtv';
 import { SignatureModal } from '../components/SignatureModal';
 import { useTranslation } from 'react-i18next';
 
@@ -206,7 +207,7 @@ export const CheckoutConfirm: React.FC = () => {
               </div>
             </div>
             <div style={{ width: '60%', padding: '24px', display: 'flex', flexDirection: 'column' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', marginBottom: '12px' }}>{booking.atvId.name}</h2>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', marginBottom: '12px' }}>{formatAtvName(booking.atvId)}</h2>
               <p style={{ color: '#64748b', fontSize: '13px', lineHeight: '1.6', marginBottom: '24px', flex: 1 }}>
                 {t("The pinnacle of off-road engineering. Premium performance shocks, and intelligent Throttle Control (iTC). Model: ")}{booking.atvId.model}.
               </p>

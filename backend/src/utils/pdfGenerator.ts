@@ -2,6 +2,23 @@ import PDFDocument from 'pdfkit';
 import { Invoice } from '../models/invoice.model';
 import { Payment } from '../models/payment.model';
 
+const formatTZDate = (d: any) => {
+  if (!d) return 'N/A';
+  return new Date(d).toLocaleDateString('en-US', { timeZone: 'America/Santo_Domingo', year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+const formatTZDateTime = (d: any) => {
+  if (!d) return 'N/A';
+  return new Date(d).toLocaleString('en-US', { timeZone: 'America/Santo_Domingo', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+const formatAtvName = (atv: any) => {
+  if (!atv) return 'N/A';
+  const unit = atv.unitNumber ? `[${atv.unitNumber}] - ` : '';
+  const color = atv.color ? ` - [${atv.color}]` : '';
+  return `${unit}${atv.name || ''} ${atv.model || ''}${color}`.trim();
+};
+
 export const generateWaiverPDF = async (booking: any, waiver: any, language: 'EN' | 'ES' = 'EN'): Promise<Buffer> => {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50 });
@@ -41,9 +58,9 @@ export const generateWaiverPDF = async (booking: any, waiver: any, language: 'EN
     doc.text(`Contract No: ${waiver.contractNumber}`);
     doc.text(`Booking No: ${booking.bookingNumber}`);
     doc.text(`Customer Name: ${clientName}`);
-    doc.text(`ATV Model: ${booking.atvId.name} (${booking.atvId.model})`);
-    doc.text(`Rental Start: ${new Date(booking.startDate).toDateString()}`);
-    doc.text(`Rental End: ${new Date(booking.endDate).toDateString()}`);
+    doc.text(`ATV Model: ${formatAtvName(booking.atvId)}`);
+    doc.text(`Rental Start: ${formatTZDate(booking.startDate)}`);
+    doc.text(`Rental End: ${formatTZDate(booking.endDate)}`);
     
     doc.moveDown(1.5);
     
@@ -87,7 +104,7 @@ export const generateWaiverPDF = async (booking: any, waiver: any, language: 'EN
     doc.font('Helvetica')
        .fontSize(10)
        .text(language === 'ES' ? `Firmado por: ${clientName}` : `Signed by: ${clientName}`);
-    doc.text(language === 'ES' ? `Fecha: ${new Date(waiver.createdAt).toDateString()}` : `Date Signed: ${new Date(waiver.createdAt).toDateString()}`);
+    doc.text(language === 'ES' ? `Fecha: ${formatTZDate(waiver.createdAt)}` : `Date Signed: ${formatTZDate(waiver.createdAt)}`);
     
     if (waiver.agreedToTerms) {
       doc.moveDown(1);
@@ -106,7 +123,7 @@ export const generateWaiverPDF = async (booking: any, waiver: any, language: 'EN
           doc.text('_____________________________', 50, startSigY);
           doc.text(language === 'ES' ? 'Firma del Cliente' : 'Customer Signature', 50, startSigY + 15);
           if (booking.customerSignedAt) {
-            doc.text(`Signed At: ${new Date(booking.customerSignedAt).toLocaleString()}`, 50, startSigY + 30);
+            doc.text(`Signed At: ${formatTZDateTime(booking.customerSignedAt)}`, 50, startSigY + 30);
           }
           
           if (booking.adminSignature) {
@@ -117,7 +134,7 @@ export const generateWaiverPDF = async (booking: any, waiver: any, language: 'EN
                 doc.text('_____________________________', 300, startSigY);
                 doc.text(language === 'ES' ? 'Firma del Representante' : 'Representative Signature', 300, startSigY + 15);
                 if (booking.adminSignedAt) {
-                  doc.text(`Signed At: ${new Date(booking.adminSignedAt).toLocaleString()}`, 300, startSigY + 30);
+                  doc.text(`Signed At: ${formatTZDateTime(booking.adminSignedAt)}`, 300, startSigY + 30);
                 }
                 doc.end();
               }).catch(() => {
@@ -189,10 +206,10 @@ export const generateReceiptPDF = async (booking: any): Promise<Buffer> => {
     const clientName = booking.customerId ? `${booking.customerId.firstName} ${booking.customerId.lastName}` : 'Guest';
     doc.text(`Customer Name: ${clientName}`);
     doc.text(`Passport / ID: ${booking.customerId?.passport || 'N/A'}`);
-    doc.text(`Date Issued: ${new Date().toDateString()}`);
-    doc.text(`ATV Model: ${booking.atvId.name} (${booking.atvId.model})`);
-    doc.text(`Scheduled: ${new Date(booking.startDate).toLocaleString()} to ${new Date(booking.endDate).toLocaleString()}`);
-    doc.text(`Actual Times: ${booking.actualCheckInTime ? new Date(booking.actualCheckInTime).toLocaleString() : 'N/A'} to ${booking.actualCheckOutTime ? new Date(booking.actualCheckOutTime).toLocaleString() : 'N/A'}`);
+    doc.text(`Date Issued: ${formatTZDate(new Date())}`);
+    doc.text(`ATV Model: ${formatAtvName(booking.atvId)}`);
+    doc.text(`Scheduled: ${formatTZDateTime(booking.startDate)} to ${formatTZDateTime(booking.endDate)}`);
+    doc.text(`Actual Times: ${booking.actualCheckInTime ? formatTZDateTime(booking.actualCheckInTime) : 'N/A'} to ${booking.actualCheckOutTime ? formatTZDateTime(booking.actualCheckOutTime) : 'N/A'}`);
     
     doc.moveDown(1.5);
     
@@ -223,6 +240,16 @@ export const generateReceiptPDF = async (booking: any): Promise<Buffer> => {
       startY += 20;
     }
        
+    if (booking.depositRefunded) {
+      doc.font('Helvetica-Bold')
+         .text(`Security Deposit Refunded`, 50, startY + 5)
+         .text(`+$${(booking.depositRefundedAmount || 0).toFixed(2)}`, 460, startY + 5);
+      // Not subtracting from totalDue here anymore because the invoice amount was already reduced during checkout
+      // totalDue -= (booking.depositRefundedAmount || 0);
+      startY += 20;
+      doc.font('Helvetica');
+    }
+
     doc.moveTo(50, startY + 5).lineTo(530, startY + 5).strokeColor('#9ca3af').stroke();
     
     let totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
@@ -246,7 +273,7 @@ export const generateReceiptPDF = async (booking: any): Promise<Buffer> => {
     doc.font('Helvetica');
     if (payments.length > 0) {
       for (const p of payments) {
-        doc.text(`- ${p.receiptNumber}: $${p.amount.toFixed(2)} via ${p.paymentMethod} on ${new Date(p.collectionDate).toLocaleString()}`, 50, doc.y);
+        doc.text(`- ${p.receiptNumber}: $${p.amount.toFixed(2)} via ${p.paymentMethod} on ${formatTZDateTime(p.collectionDate)}`, 50, doc.y);
       }
     } else {
       doc.text('No payments recorded.', 50, doc.y);

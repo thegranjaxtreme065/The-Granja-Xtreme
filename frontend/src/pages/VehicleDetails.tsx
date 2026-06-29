@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { formatAtvName } from '../utils/formatAtv';
 import { useTranslation } from 'react-i18next';
 import { 
   ShieldAlert, 
@@ -397,7 +398,7 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ user }) => {
                 </div>
               </div>
               <h1 className="display-xl" style={{ marginBottom: '8px', color: 'var(--on-background)' }}>
-                {i18n.language?.startsWith('es') ? (atv.nameEs || atv.name) : atv.name}
+                {formatAtvName({...atv, name: i18n.language?.startsWith('es') ? (atv.nameEs || atv.name) : atv.name, model: undefined})}
               </h1>
               <p className="body-lg" style={{ color: 'var(--on-surface-variant)', marginBottom: '16px', fontWeight: 500 }}>{t(tagline)}</p>
               

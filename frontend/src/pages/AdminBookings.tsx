@@ -6,6 +6,7 @@ import { AdminBookingModal } from '../components/AdminBookingModal';
 import { FleetCheckModal } from '../components/FleetCheckModal';
 import { AdminBookingDetailsModal } from '../components/AdminBookingDetailsModal';
 import { SkeletonGrid } from '../components/Skeletons';
+import { formatAtvName } from '../utils/formatAtv';
 
 interface Booking {
   _id: string;
@@ -124,7 +125,7 @@ export const AdminBookings: React.FC = () => {
       if (!isDateMatch) return false;
 
       if (vehicleFilter !== 'All Vehicles') {
-        const atvName = `${b.atvId?.name || ''} ${b.atvId?.model || ''}`.trim();
+        const atvName = formatAtvName(b.atvId);
         if (atvName !== vehicleFilter) return false;
       }
 
@@ -235,7 +236,7 @@ export const AdminBookings: React.FC = () => {
                           backgroundColor: isCancelled ? '#fee2e2' : isPending ? '#fef3c7' : isConfirmed ? '#ecfccb' : '#f1f5f9',
                           color: isCancelled ? '#b91c1c' : isPending ? '#b45309' : isConfirmed ? '#4d7c0f' : '#475569'
                         }}>
-                          {b.atvId?.name || 'Booking'}
+                          {formatAtvName(b.atvId) || 'Booking'}
                         </div>
                       );
                     })}
@@ -300,7 +301,7 @@ export const AdminBookings: React.FC = () => {
                             backgroundColor: isCancelled ? '#fee2e2' : isPending ? '#fef3c7' : isConfirmed ? '#ecfccb' : '#f1f5f9',
                             color: isCancelled ? '#b91c1c' : isPending ? '#b45309' : isConfirmed ? '#4d7c0f' : '#475569'
                           }}>
-                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.atvId?.name || 'Booking'}</div>
+                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatAtvName(b.atvId) || 'Booking'}</div>
                             <div style={{ fontSize: '9px', marginTop: '2px', opacity: 0.8 }}>{b.customerId?.firstName} {b.customerId?.lastName}</div>
                           </div>
                         );
@@ -343,7 +344,7 @@ export const AdminBookings: React.FC = () => {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px', color: '#334155', fontWeight: 600 }}>
-                      <Truck size={16} color="#94a3b8" /> {booking.atvId?.name} {booking.atvId?.model}
+                      <Truck size={16} color="#94a3b8" /> {formatAtvName(booking.atvId)}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px', color: '#334155', fontWeight: 600 }}>
                       <Clock size={16} color="#94a3b8" /> 
@@ -382,7 +383,7 @@ export const AdminBookings: React.FC = () => {
                         </h4>
                         <span style={{ backgroundColor: '#dcfce7', color: '#166534', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>{t(`adminBookings.status.${booking.status.toLowerCase().replace(' ', '')}`, booking.status)}</span>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>{booking.atvId?.name} {booking.atvId?.model}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>{formatAtvName(booking.atvId)}</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: '#475569', marginTop: '4px' }}>
                         <span>{(booking as any).actualCheckOutTime ? new Date((booking as any).actualCheckOutTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + t('adminBookings.checkoutSuffix', ' Check-out') : (booking as any).actualCheckInTime ? new Date((booking as any).actualCheckInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + t('adminBookings.checkinSuffix', ' Check-in') : t('adminBookings.scheduledStart', 'Scheduled Start')}</span>
                         {booking.payment?.status === 'Paid' ? (
@@ -416,7 +417,7 @@ export const AdminBookings: React.FC = () => {
                         </h4>
                         <span style={{ backgroundColor: '#fee2e2', color: '#991b1b', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>{t('adminBookings.cancelled', 'CANCELLED')}</span>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#b91c1c' }}>{booking.atvId?.name} {booking.atvId?.model}</div>
+                      <div style={{ fontSize: '12px', color: '#b91c1c' }}>{formatAtvName(booking.atvId)}</div>
                       <button 
                         onClick={() => setSelectedBookingForDetails(booking._id)}
                         style={{ marginTop: '8px', backgroundColor: 'white', color: '#991b1b', border: '1px solid #fca5a5', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>

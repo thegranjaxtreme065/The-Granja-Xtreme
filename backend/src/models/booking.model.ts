@@ -20,6 +20,8 @@ export interface IBooking {
     price: number;
   }[];
   finalTotal?: number;
+  depositRefunded?: boolean;
+  depositRefundedAmount?: number;
   status: 'Pending' | 'Pending Signature' | 'Customer Signed' | 'Upcoming' | 'Active' | 'Completed' | 'Cancelled';
   signedWaiverId?: Types.ObjectId;
   checkOutLogId?: Types.ObjectId;
@@ -54,6 +56,8 @@ const bookingSchema = new Schema<IBooking>(
       price: { type: Number, required: true }
     }],
     finalTotal: { type: Number },
+    depositRefunded: { type: Boolean, default: false },
+    depositRefundedAmount: { type: Number, default: 0 },
     status: {  
       type: String, 
       enum: ['Pending', 'Pending Signature', 'Customer Signed', 'Upcoming', 'Active', 'Completed', 'Cancelled'], 

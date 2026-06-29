@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Pencil, Wrench, Search, LayoutGrid, List } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
+
+import { formatAtvName } from '../utils/formatAtv';
 import { uploadImage } from '../utils/upload';
 import { useStickyState } from '../hooks/useStickyState';
 
@@ -10,6 +12,9 @@ interface ATV {
   name: string;
   nameEs?: string;
   model: string;
+  unitNumber?: string;
+  color?: string;
+  colorEs?: string;
   year: number;
   status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' | 'DECOMMISSIONED';
   ratePerDay: number;
@@ -46,11 +51,15 @@ export const FleetManager: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isTranslatingTitle, setIsTranslatingTitle] = useState(false);
   const [isTranslatingDesc, setIsTranslatingDesc] = useState(false);
+  const [isTranslatingColor, setIsTranslatingColor] = useState(false);
 
   // Form states for Add ATV
   const [name, setName] = useStickyState('', 'atv_name');
   const [nameEs, setNameEs] = useStickyState('', 'atv_name_es');
   const [model, setModel] = useStickyState('', 'atv_model');
+  const [unitNumber, setUnitNumber] = useStickyState('', 'atv_unitNumber');
+  const [color, setColor] = useStickyState('', 'atv_color');
+  const [colorEs, setColorEs] = useStickyState('', 'atv_color_es');
   const [year, setYear] = useStickyState(new Date().getFullYear(), 'atv_year');
   const [ratePerDay, setRatePerDay] = useStickyState(80, 'atv_rate_day');
   const [hourlyRate, setHourlyRate] = useStickyState(15, 'atv_rate_hour');
@@ -90,6 +99,9 @@ export const FleetManager: React.FC = () => {
     setName('');
     setNameEs('');
     setModel('');
+    setUnitNumber('');
+    setColor('');
+    setColorEs('');
     setYear(new Date().getFullYear());
     setRatePerDay(80);
     setHourlyRate(15);
@@ -119,6 +131,24 @@ export const FleetManager: React.FC = () => {
       console.error(error);
     } finally {
       setIsTranslatingTitle(false);
+    }
+  };
+
+  const handleAutoTranslateColor = async () => {
+    if (!color) return;
+    setIsTranslatingColor(true);
+    try {
+      const res = await fetchAPI('/translations', {
+        method: 'POST',
+        body: { text: color, targetLang: 'es' }
+      });
+      if (res && res.translated) {
+        setColorEs(res.translated);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsTranslatingColor(false);
     }
   };
 
@@ -167,6 +197,9 @@ export const FleetManager: React.FC = () => {
           name,
           nameEs,
           model,
+          unitNumber,
+          color,
+          colorEs,
           year,
           ratePerDay,
           hourlyRate,
@@ -209,6 +242,9 @@ export const FleetManager: React.FC = () => {
     setName(atv.name);
     setNameEs(atv.nameEs || '');
     setModel(atv.model);
+    setUnitNumber(atv.unitNumber || '');
+    setColor(atv.color || '');
+    setColorEs(atv.colorEs || '');
     setYear(atv.year);
     setRatePerDay(atv.ratePerDay);
     setHourlyRate(atv.hourlyRate);
@@ -236,6 +272,8 @@ export const FleetManager: React.FC = () => {
           name,
           nameEs,
           model,
+          unitNumber,
+          color,
           year,
           ratePerDay,
           hourlyRate,
@@ -310,9 +348,30 @@ export const FleetManager: React.FC = () => {
           <input type="text" value={nameEs} onChange={(e) => setNameEs(e.target.value)} style={{ width: '100%', padding: '10px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} />
         </div>
       </div>
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>{t('fleetManager.modelSeries', 'Model Series')}</label>
-        <input type="text" value={model} onChange={(e) => setModel(e.target.value)} placeholder={t('fleetManager.placeholderSeries', 'e.g. Utility Edition')} style={{ width: '100%', padding: '10px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} required />
+      <div className="checkout-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>{t('fleetManager.modelSeries', 'Model Series')}</label>
+          <input type="text" value={model} onChange={(e) => setModel(e.target.value)} placeholder={t('fleetManager.placeholderSeries', 'e.g. Utility Edition')} style={{ width: '100%', padding: '10px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} required />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>{t('fleetManager.unitNumber', 'Unit Number')}</label>
+          <input type="text" value={unitNumber} onChange={(e) => setUnitNumber(e.target.value)} placeholder="e.g. ATV-01" style={{ width: '100%', padding: '10px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} required />
+        </div>
+      </div>
+      <div className="checkout-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>{t('fleetManager.color', 'Color')}</label>
+          <input type="text" value={color} onChange={(e) => setColor(e.target.value)} placeholder="e.g. Army Green" style={{ width: '100%', padding: '10px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} required />
+        </div>
+        <div>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+            {t('fleetManager.colorEs', 'Color (Spanish)')}
+            <button type="button" onClick={handleAutoTranslateColor} disabled={isTranslatingColor || !color} style={{ background: 'none', border: 'none', color: '#4d7c0f', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>
+              {isTranslatingColor ? t('fleetManager.translating', 'Translating...') : t('fleetManager.autoTranslate', 'Auto-Translate')}
+            </button>
+          </label>
+          <input type="text" value={colorEs} onChange={(e) => setColorEs(e.target.value)} placeholder="e.g. Verde Militar" style={{ width: '100%', padding: '10px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} />
+        </div>
       </div>
       <div className="checkout-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
         <div>
@@ -551,7 +610,7 @@ export const FleetManager: React.FC = () => {
                 </div>
                 <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0, lineHeight: 1.3, flex: 1, paddingRight: '12px' }}>{atv.name} {atv.model}</h3>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0, lineHeight: 1.3, flex: 1, paddingRight: '12px' }}>{formatAtvName(atv)}</h3>
                     <div style={{ fontSize: '16px', fontWeight: 800, color: '#ca8a04', whiteSpace: 'nowrap' }}>${atv.ratePerDay}<span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>{t('fleetManager.perDay', '/day')}</span></div>
                   </div>
                   <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '24px' }}>
@@ -603,7 +662,7 @@ export const FleetManager: React.FC = () => {
                 
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>{atv.name} {atv.model}</h3>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>{formatAtvName(atv)}</h3>
                     <div style={{
                       backgroundColor: badge.bg, color: badge.text,
                       padding: '4px 10px', borderRadius: '16px', fontSize: '10px', fontWeight: 800

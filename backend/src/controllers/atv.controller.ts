@@ -21,6 +21,8 @@ const createAtvSchema = z.object({
   specs: specsSchema,
   images: z.array(z.string()).default([]),
   category: z.string().optional(),
+  unitNumber: z.string().optional(),
+  color: z.string().optional(),
   currentOdometer: z.number().nonnegative().default(0),
   currentFuelLevel: z.number().min(0).max(100).default(100)
 });
@@ -48,9 +50,9 @@ export const isAtvBooked = async (
 ): Promise<boolean> => {
   const query: any = {
     atvId,
-    status: { $in: ['Pending', 'Reserved', 'Active'] },
-    startDate: { $lt: endDate },
-    endDate: { $gt: startDate }
+    status: { $in: ['Pending', 'Pending Signature', 'Customer Signed', 'Upcoming', 'Active'] },
+    startDate: { $lte: endDate },
+    endDate: { $gte: startDate }
   };
 
   if (excludeBookingId) {
@@ -157,8 +159,22 @@ export const checkAtvAvailability = async (req: Request, res: Response): Promise
       return;
     }
 
-    const startDate = new Date(start as string);
-    const endDate = new Date(end as string);
+    let startDate: Date;
+    let endDate: Date;
+
+    if (typeof start === 'string') {
+      const datePart = start.split('T')[0];
+      startDate = new Date(`${datePart}T12:00:00-04:00`);
+    } else {
+      startDate = new Date(start as unknown as string);
+    }
+
+    if (typeof end === 'string') {
+      const datePart = end.split('T')[0];
+      endDate = new Date(`${datePart}T12:00:00-04:00`);
+    } else {
+      endDate = new Date(end as unknown as string);
+    }
 
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       res.status(400).json({ message: 'Invalid start or end date format.' });

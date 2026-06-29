@@ -4,6 +4,7 @@ import { useStickyState } from '../hooks/useStickyState';
 import { User as UserIcon, AlertTriangle, Wallet, ShieldCheck, Lock, Shield } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
 import { useTranslation } from 'react-i18next';
+import { formatAtvName } from '../utils/formatAtv';
 
 const COUNTRY_CODES = [
   "AF", "AL", "DZ", "AD", "AO", "AG", "AR", "AM", "AU", "AT", "AZ", "BS", "BH", "BD", "BB", "BY", "BE", "BZ", "BJ", "BT", "BO", "BA", "BW", "BR", "BN", "BG", "BF", "BI", "CV", "KH", "CM", "CA", "CF", "TD", "CL", "CN", "CO", "KM", "CD", "CG", "CR", "HR", "CU", "CY", "CZ", "DK", "DJ", "DM", "DO", "EC", "EG", "SV", "GQ", "ER", "EE", "SZ", "ET", "FJ", "FI", "FR", "GA", "GM", "GE", "DE", "GH", "GR", "GD", "GT", "GN", "GW", "GY", "HT", "HN", "HU", "IS", "IN", "ID", "IR", "IQ", "IE", "IL", "IT", "JM", "JP", "JO", "KZ", "KE", "KI", "KP", "KR", "XK", "KW", "KG", "LA", "LV", "LB", "LS", "LR", "LY", "LI", "LT", "LU", "MG", "MW", "MY", "MV", "ML", "MT", "MH", "MR", "MU", "MX", "FM", "MD", "MC", "MN", "ME", "MA", "MZ", "MM", "NA", "NR", "NP", "NL", "NZ", "NI", "NE", "NG", "MK", "NO", "OM", "PK", "PW", "PS", "PA", "PG", "PY", "PE", "PH", "PL", "PT", "QA", "RO", "RU", "RW", "KN", "LC", "VC", "WS", "SM", "ST", "SA", "SN", "RS", "SC", "SL", "SG", "SK", "SI", "SB", "SO", "ZA", "SS", "ES", "LK", "SD", "SR", "SE", "CH", "SY", "TW", "TJ", "TZ", "TH", "TL", "TG", "TO", "TT", "TN", "TR", "TM", "TV", "UG", "UA", "AE", "GB", "US", "UY", "UZ", "VU", "VA", "VE", "VN", "YE", "ZM", "ZW"
@@ -372,7 +373,7 @@ export const BookingSummary: React.FC<{ user?: any }> = ({ user }) => {
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }}></div>
               <div style={{ position: 'absolute', bottom: '20px', left: '24px', color: 'white' }}>
                 <span style={{ backgroundColor: '#fef08a', color: '#854d0e', fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '4px', display: 'inline-block', marginBottom: '8px' }}>{t("BEST SELLER")}</span>
-                <h3 style={{ fontSize: '20px', fontWeight: 700 }}>{booking.atvId.name}</h3>
+                <h3 style={{ fontSize: '20px', fontWeight: 700 }}>{formatAtvName(booking.atvId)}</h3>
               </div>
             </div>
 

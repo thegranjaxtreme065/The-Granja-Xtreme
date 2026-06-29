@@ -8,6 +8,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
+import { formatAtvName } from '../utils/formatAtv';
 import { SignatureModal } from '../components/SignatureModal';
 import { GlobalLoader } from '../components/Skeletons';
 import { useTranslation } from 'react-i18next';
@@ -215,7 +216,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
               <div style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
                   <div>
-                    <h3 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>{nextBooking.atvId?.name} {t("Rental")}</h3>
+                    <h3 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>{formatAtvName(nextBooking.atvId)} {t("Rental")}</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4b5563' }}>
                       <MapPin size={18} /><span style={{ fontSize: '15px' }}>{t("The Granja Xtreme Headquarters")}</span>
                     </div>
@@ -241,7 +242,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
                   <div>
                     <div style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280', letterSpacing: '0.5px', marginBottom: '8px' }}>{t("VEHICLE")}</div>
                     <div style={{ fontSize: '15px', fontWeight: 600, color: '#111827' }}>
-                      {nextBooking.atvId?.name}
+                      {formatAtvName(nextBooking.atvId)}
                     </div>
                   </div>
                 </div>
@@ -279,7 +280,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
                 <div className="activity-icon" style={{ backgroundColor: '#e0f2fe', color: '#0369a1' }}><CheckCircle size={20} /></div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '15px', color: '#111827', marginBottom: '4px' }}>{t("Booking Created")}</div>
-                  <div style={{ fontSize: '14px', color: '#4b5563', marginBottom: '4px' }}>{booking.atvId?.name} ({booking.atvId?.model})</div>
+                  <div style={{ fontSize: '14px', color: '#4b5563', marginBottom: '4px' }}>{formatAtvName(booking.atvId)}</div>
                   <div style={{ fontSize: '12px', color: '#9ca3af' }}>{formatDate(booking.startDate)}</div>
                 </div>
               </div>
@@ -322,7 +323,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
                 <div key={rental._id} style={{ background: 'white', borderRadius: '16px', borderLeft: '6px solid #15803d', padding: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.02)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                     <div>
-                      <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>{rental.atvId.name}</h3>
+                      <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>{formatAtvName(rental.atvId)}</h3>
                       <p style={{ fontSize: '13px', color: '#6b7280' }}>{t("Model:")} {rental.atvId.model}</p>
                     </div>
                     {getStatusBadge(rental.status)}
@@ -353,7 +354,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
                 <div key={booking._id} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 16px rgba(0,0,0,0.02)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                     <div>
-                      <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>{booking.atvId.name}</h3>
+                      <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>{formatAtvName(booking.atvId)}</h3>
                       <p style={{ fontSize: '13px', color: '#6b7280' }}>{t("Model:")} {booking.atvId.model}</p>
                     </div>
                     {getStatusBadge(booking.status)}
@@ -448,7 +449,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', margin: 0 }}>{b.atvId.name}</h3>
+                      <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', margin: 0 }}>{formatAtvName(b.atvId)}</h3>
                       {getStatusBadge(b.status)}
                     </div>
 
@@ -605,7 +606,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
                 {t("RENTAL SUMMARY")}
               </div>
               <div style={{ fontSize: '14px', color: '#4b5563', lineHeight: 1.8 }}>
-                {t("ATV Assigned:")} <strong style={{ color: '#111827' }}>{b.atvId.name} {b.atvId.model || ''}</strong><br />
+                {t("ATV Assigned:")} <strong style={{ color: '#111827' }}>{formatAtvName(b.atvId)}</strong><br />
                 {t("Pickup:")} <strong style={{ color: '#111827' }}>{pickupText}</strong><br />
                 {t("Return:")} <strong style={{ color: '#111827' }}>{returnText}</strong><br />
                 {t("Rental Duration:")} <strong style={{ color: '#111827' }}>{durationText}</strong>
@@ -627,7 +628,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
             <tbody>
               <tr>
                 <td style={{ padding: '24px', borderBottom: '1px solid #f3f4f6' }}>
-                  <div style={{ fontWeight: 600, color: '#111827', fontSize: '14px', marginBottom: '4px' }}>{t("ATV Rental -")} {b.atvId.name}</div>
+                  <div style={{ fontWeight: 600, color: '#111827', fontSize: '14px', marginBottom: '4px' }}>{t("ATV Rental -")} {formatAtvName(b.atvId)}</div>
                   <div style={{ fontSize: '12px', color: '#6b7280' }}>{t("Includes standard equipment and safety gear.")}</div>
                 </td>
                 <td style={{ padding: '24px', textAlign: 'center', borderBottom: '1px solid #f3f4f6', color: '#4b5563', fontSize: '14px' }}>{days} {days > 1 ? t('Days') : t('Day')}</td>
@@ -801,7 +802,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
                   <img src={b.atvId?.images?.[0] || "/images/vasile-valcan-1HqixV1agUw-unsplash.jpg"} alt="ATV" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>{b.atvId.name}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>{formatAtvName(b.atvId)}</div>
                   <div style={{ fontSize: '12px', color: '#4b5563', fontStyle: 'italic', marginBottom: '12px' }}>VIN: 4XP2024-TR-90112</div>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '10px', background: '#b4ebd1', color: '#166534', padding: '4px 10px', borderRadius: '12px', fontWeight: 700, whiteSpace: 'nowrap' }}>{t("PREMIUM CLASS")}</span>
@@ -965,7 +966,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ user }) =>
                 INVOICE SUMMARY
               </div>
               <div style={{ fontSize: '14px', color: '#4b5563', lineHeight: 1.8 }}>
-                ATV Reference: <strong style={{ color: '#111827' }}>{inv.atvId?.name || 'N/A'} {inv.atvId?.model || ''}</strong><br />
+                ATV Reference: <strong style={{ color: '#111827' }}>{formatAtvName(inv.atvId) || 'N/A'}</strong><br />
                 Charge Type: <strong style={{ color: '#111827' }}>{inv.invoiceType || 'Additional Charge'}</strong><br />
               </div>
             </div>

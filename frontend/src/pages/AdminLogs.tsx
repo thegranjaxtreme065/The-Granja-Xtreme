@@ -83,6 +83,8 @@ export const AdminLogs: React.FC = () => {
     // Auth & Users
     if (action.startsWith('LOGIN_')) {
       const status = action.split('_')[1];
+      if (status === 'SUCCESS') return t('adminLogs.actions.loginSuccess', 'Login Successful');
+      if (status === 'FAILED') return t('adminLogs.actions.loginFailed', 'Login Failed');
       return t('adminLogs.actions.login', 'LOGIN_{{status}}', { status });
     }
     match = action.match(/New user registered via Firebase \((.*)\)/);
@@ -116,6 +118,8 @@ export const AdminLogs: React.FC = () => {
     if (match) return t('adminLogs.actions.updatedCms', 'Updated CMS section: {{key}}', { key: match[1] });
     
     // Bookings
+    match = action.match(/Complete booking created for ATV (.*)/);
+    if (match) return t('adminLogs.actions.bookingCreated', 'Complete booking created for ATV {{model}}', { model: match[1] });
     match = action.match(/Signed waiver for booking (.*)/);
     if (match) return t('adminLogs.actions.signedWaiver', 'Signed waiver for booking {{id}}', { id: match[1] });
     match = action.match(/Logged (.*) inspection for booking (.*)/);

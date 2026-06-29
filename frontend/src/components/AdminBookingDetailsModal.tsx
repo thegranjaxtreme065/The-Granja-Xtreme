@@ -156,7 +156,8 @@ export const AdminBookingDetailsModal: React.FC<BookingDetailsProps> = ({ bookin
     const securityDeposit = 150; // Flat deposit
     const accessoriesSum = b.accessories ? b.accessories.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0) : 0;
     const extraChargesSum = b.extraCharges ? b.extraCharges.reduce((acc: number, item: any) => acc + Number(item.amount), 0) : 0;
-    const total = baseRate + tax + securityDeposit + accessoriesSum + extraChargesSum;
+    const refundAmount = b.depositRefunded ? (b.depositRefundedAmount || 0) : 0;
+    const total = baseRate + tax + securityDeposit + accessoriesSum + extraChargesSum - refundAmount;
 
     const isPaid = b.payment?.status === 'Paid' || b.invoice?.status === 'Paid';
     // Use amountPaid from backend if available, otherwise assume total if fully paid, or 0.
@@ -350,6 +351,12 @@ export const AdminBookingDetailsModal: React.FC<BookingDetailsProps> = ({ bookin
                 <span>{t("Security Deposit (Refundable)")}</span>
                 <span>${securityDeposit.toFixed(2)}</span>
               </div>
+              {b.depositRefunded && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontSize: '14px', color: '#059669', fontWeight: 600 }}>
+                  <span>{t("Security Deposit Refunded")}</span>
+                  <span>-${(b.depositRefundedAmount || 0).toFixed(2)}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0 8px', fontSize: '18px', fontWeight: 800, color: '#111827' }}>
                 <span>{t("Grand Total")}</span>
                 <span>${total.toFixed(2)}</span>
@@ -536,7 +543,10 @@ export const AdminBookingDetailsModal: React.FC<BookingDetailsProps> = ({ bookin
   const baseRate = days * (booking.atvId?.ratePerDay || 0);
   const tax = Math.round(baseRate * 0.1 * 100) / 100; // 10% tax
   const securityDeposit = 150; // Flat deposit
-  const total = baseRate + tax + securityDeposit;
+  const accessoriesSum = booking.accessories ? booking.accessories.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0) : 0;
+  const extraChargesSum = booking.extraCharges ? booking.extraCharges.reduce((acc: number, item: any) => acc + Number(item.amount), 0) : 0;
+  const refundAmount = booking.depositRefunded ? (booking.depositRefundedAmount || 0) : 0;
+  const total = baseRate + tax + securityDeposit + accessoriesSum + extraChargesSum - refundAmount;
 
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -685,7 +695,13 @@ export const AdminBookingDetailsModal: React.FC<BookingDetailsProps> = ({ bookin
                 {booking.accessories && booking.accessories.length > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#64748b' }}>{t("Accessories")}</span> <span>${booking.accessories.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0).toFixed(2)}</span></div>
                 )}
+                {booking.extraCharges && booking.extraCharges.length > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#64748b' }}>{t("Extra Charges")}</span> <span>${booking.extraCharges.reduce((acc: number, item: any) => acc + Number(item.amount), 0).toFixed(2)}</span></div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#64748b' }}>{t("Discount")}</span> <span style={{ color: '#10b981' }}>-$0.00</span></div>
+                {booking.depositRefunded && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#059669', fontWeight: 600 }}>{t("Deposit Refunded")}</span> <span style={{ color: '#059669', fontWeight: 600 }}>-${(booking.depositRefundedAmount || 0).toFixed(2)}</span></div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '12px', borderTop: '1px dashed #cbd5e1', fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
                   <span>{t("Total Cost")}</span> <span>${total.toFixed(2)}</span>
                 </div>

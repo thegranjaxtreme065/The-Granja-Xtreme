@@ -6,7 +6,7 @@ import { uploadBase64Image } from '../utils/upload';
 interface SignatureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (signatureUrl: string) => void;
+  onComplete: (signatureUrl: string) => Promise<void> | void;
   title?: string;
   subtitle?: string;
 }
@@ -43,7 +43,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
       if (!base64Str) throw new Error('Failed to capture signature.');
 
       const url = await uploadBase64Image(base64Str, 'signatures');
-      onComplete(url);
+      await onComplete(url);
     } catch (err: any) {
       setError(err.message || 'Failed to save signature. Please try again.');
     } finally {
